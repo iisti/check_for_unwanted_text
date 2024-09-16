@@ -1,24 +1,36 @@
 #!/bin/bash
 
-# Publish private to public
+# Check for unwanted text (sensitive data, passwords, etc) from directory that contains text files.
 
 #####################################
 ##### SCRIPT INIT AND CHECKS
 #####################################
 
-path_to_check="$1"
-
-if [ -z "$1" ]
-then
-    echo "ERROR: No path to check was given!"
-    echo "Script usage:"
-    echo "./check_for_unwanted.sh <path>"
-    exit 1
-fi
+datefile=$(date +"%Y-%m-%d_%H-%M-%S")
 
 #####################################
 ##### FUNCTIONS
 #####################################
+
+func_show_help () {
+    cmd=$(basename $0)
+    echo "Usage: ${cmd} -p <path_to_dir> -u <path_to_file> [-e exclude_list]"
+    echo " -h               Show this message"
+    echo " -p               <Required> A path to files that should be checked."
+    echo " -u unwanted.txt  <Required> A text file which contains lines of unwanted text."
+    echo " -e exclude.txt   [Optional] A text file which contains lines that should be excluded from the check."
+    echo
+    echo "Examples: "
+    echo
+    echo "# 1st run"
+    echo "./${cmd} -p /path/to/dir -u unwanted.txt"
+    echo
+    echo "# Create exclude list"
+    echo "./${cmd} -p /path/to/dir > exclude_your_file.txt"
+    echo
+    echo "# Run script with exclude list, so that already checked lines don't show up."
+    echo "./${cmd} -p /path/to/dir -e exclude_list.txt"
+}
 
 func_print_arr () {
     # Reference the array correctly (not tmp_array="$1" )
@@ -34,7 +46,45 @@ func_print_arr () {
 ##### SCRIPT MAIN
 #####################################
 
-readarray -t arr_unwanted < ./unwanted.txt
+# Parse options
+# Colon : means that the option expects an argument.
+while getopts "h?p:u:e:" opt; do
+    case "$opt" in
+    h|\?)
+        func_show_help
+        exit 0
+        ;;
+    p)  path_to_check=$OPTARG
+        ;;
+    u)  unwanted=$OPTARG
+        ;;
+    e)  exclude=$OPTARG
+        ;;
+    esac
+done
+
+shift "$((OPTIND-1))"
+[[ "${1:-}" = "--" ]] && shift
+
+
+### START Check that required options
+if [[ -z "${path_to_check}" ]]; then
+    echo "ERROR: No path to check was provided!"
+    echo
+    func_show_help
+    exit 1;
+fi
+
+if [[ -z "${unwanted}" ]]; then
+    echo "ERROR: No unwanted text file was provided!"
+    echo
+    func_show_help
+    exit 1;
+fi
+### END Check required options
+
+readarray -t arr_unwanted < "$unwanted"
+#declare -p arr_unwanted
 
 # Chech for the unwated patterns and create an arr_all_grep array of the
 # results.
@@ -49,14 +99,16 @@ readarray -t arr_all_grep <<<"$(
     done
 )"
 
-# If nothing is relevant, one can create exclude_grep.txt file, which errors of lines that are not interesting.
-#func_print_arr "${arr_all_grep[@]}" > exclude_grep.txt
-
-# Create an array of the patterns that should be excluded from the comparison.
-readarray -t arr_exclude < ./exclude_grep.txt
+if [[ ! -z "${exclude}" ]]; then
+    # Create an array of the patterns that should be excluded from the comparison.
+    readarray -t arr_exclude < "$exclude"
+else
+    arr_exclude=()
+fi
+#declare -p arr_exclude
 
 # Compare if the arr_all_grep has new findings which are not excluded in
-# exclude_grep.txt 
+# exclude file. 
 arr_diff=()
 for i in "${arr_all_grep[@]}"; do
     skip=
@@ -68,4 +120,16 @@ done
 #declare -p arr_diff
 
 # Print the differnces
-func_print_arr "${arr_diff[@]}" 
+#func_print_arr "${arr_diff[@]}"
+
+# Print and highlight found unwanted text
+for (( j=0; j<${#arr_diff[@]}; j++ ))
+do
+    for (( i=0; i<${#arr_unwanted[@]}; i++ ))
+    do
+        echo "${arr_diff[$j]}" | grep -i --color \
+            --exclude="check_for_unwanted.sh" \
+            --exclude-dir=".git" \
+            "${arr_unwanted[$i]}"
+    done
+done
