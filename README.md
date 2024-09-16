@@ -1,10 +1,14 @@
 # Check for unwanted text
+
 A script for checking if there's unwanted text in a directory's subdirectories/files.
 
-Usage:
+Check usage with:
 
-    ./script.sh <path>
+~~~sh
+./check_for_unwanted.sh -h
+~~~
 
-One can create a file to exlude lines redirecting output into a file.
+## GitHub remove history
 
-    ./script.sh <path> > exclude_grep.txt
+* One file <https://github.com/iisti/it_admin_tricks/blob/main/git/github_admin_tricks.md#remove-a-file-and-its-commit-history-from-a-repository>
+* All history of repository <https://github.com/iisti/it_admin_tricks/blob/main/git/github_admin_tricks.md#remove-all-history-from-repository>
