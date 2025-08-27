@@ -86,8 +86,14 @@ fi
 readarray -t arr_unwanted < "$unwanted"
 #declare -p arr_unwanted
 
+# Extracts repo name from "/tmp/tmp.VeOz9LjtRc/it_admin_tricks_private"
+# to "it_admin_tricks_private"
+repo_name=$(echo "$path_to_check" | rev | cut -d'/' -f 1 | rev)
+path_without_repo=$(echo "$path_to_check" | sed "s|$repo_name||g")
+
 # Chech for the unwated patterns and create an arr_all_grep array of the
 # results.
+# The sed command remove path to the repository
 readarray -t arr_all_grep <<<"$(
     for (( i=0; i<${#arr_unwanted[@]}; i++ ))
     do
@@ -95,7 +101,8 @@ readarray -t arr_all_grep <<<"$(
             --exclude="check_for_unwanted.sh" \
             --exclude-dir=".git" \
             "${arr_unwanted[$i]}" \
-            "$path_to_check"
+            "$path_to_check" \
+            | sed "s|^.*$repo_name|$repo_name|g"
     done
 )"
 
