@@ -39,12 +39,14 @@ Check usage with:
 1. Copy files and folders from private to public
 
     ~~~ssh
+    cd ../it_admin_tricks_private
     find . -maxdepth 1 ! -name .git -type d -not -path '.' -exec cp -r {} ../it_admin_tricks/ \;
     ~~~
 
 1. Add changes, make commit and push
 
     ~~~sh
+    cd ../it_admin_tricks
     git add . && git commit -m "update from private repo" && git push
     ~~~
 
