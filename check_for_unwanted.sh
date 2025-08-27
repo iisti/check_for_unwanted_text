@@ -88,6 +88,8 @@ readarray -t arr_unwanted < "$unwanted"
 
 # Extracts repo name from "/tmp/tmp.VeOz9LjtRc/it_admin_tricks_private"
 # to "it_admin_tricks_private"
+trim_path=$(echo "$path_to_check" | sed 's|/*$||')
+path_to_check="$trim_path"
 repo_name=$(echo "$path_to_check" | rev | cut -d'/' -f 1 | rev)
 path_without_repo=$(echo "$path_to_check" | sed "s|$repo_name||g")
 
